@@ -74,7 +74,7 @@ async function createPool() {
   const config = parseDatabaseUrl(process.env.DATABASE_URL);
 
   const addresses = isNeonHostname(config.hostname)
-    ? NEON_IPV4_FALLBACKS
+    ? [config.hostname, ...NEON_IPV4_FALLBACKS]
     : [config.hostname];
 
   let lastError;
