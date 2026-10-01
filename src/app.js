@@ -9,8 +9,17 @@ const app = express();
 // --- Core middleware ---
 app.use(helmet());
 
+function sanitizeOrigin(str) {
+  try {
+    const parsed = new URL(str.trim());
+    return parsed.origin;
+  } catch {
+    return str.trim().replace(/\/.*$/, '');
+  }
+}
+
 const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim().replace(/\/$/, ''))
+  ? process.env.CORS_ORIGIN.split(',').map(sanitizeOrigin)
   : [];
 
 app.use(
@@ -19,9 +28,14 @@ app.use(
       // Allow non-browser requests (curl, postman, mobile, server-to-server)
       if (!origin) return callback(null, true);
 
-      const cleanOrigin = origin.replace(/\/$/, '');
+      let cleanOrigin = origin;
+      try {
+        cleanOrigin = new URL(origin).origin;
+      } catch {
+        cleanOrigin = origin.replace(/\/$/, '');
+      }
 
-      // Allow if wildcard configured or in local development
+      // Allow if wildcard configured or if CORS_ORIGIN not specified
       if (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN === '*') {
         return callback(null, true);
       }
